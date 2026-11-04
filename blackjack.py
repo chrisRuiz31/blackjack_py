@@ -318,7 +318,7 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                         if element.image_index == len(element.image_files) - 1:
                             button.visible = False
             elif ui_action == "ADD":
-                print(f"pressed the {button.value_string}")
+                #print(f"pressed the {button.value_string}")
                 value = int(button.value_string)
                 if value <= bank:
                     new_chip = UIImageElement(center_position=(460, 470),
