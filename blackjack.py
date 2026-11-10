@@ -21,6 +21,7 @@ YELLOW = (225, 150, 40)
 BG_YELLOW = (199, 129, 24)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+CHIP_VALUES = [500, 100, 50, 25, 5, 1] # Start with the biggest first for all in
 
 class GameState(Enum):
     QUIT = -1
@@ -297,6 +298,20 @@ def refresh_bank_ui(buttons, bank):
             element.update_amount(f"Bank:{bank}")
         if hasattr(element, "value_string"):
             element.visible = int(element.value_string) <= bank
+        if hasattr(element, "is_all_in"):
+            element.visible = bank > 0
+
+# Changed into a helper function to create chips
+def make_betting_chip(value):
+    """Creates a chip sprite on the betting table worth 'value'"""
+    chip = UIImageElement(center_position=(460, 470),
+                          file=f"assets/chip_{value:02d}.png",
+                          size=0.8,
+                          clickable=True,
+                          action="REMOVE",
+                          clickable_size=1.2)
+    chip.value = value
+    return chip
 
 def game_loop(screen, buttons, game_state, betting_chips=None):
     running = True
@@ -327,17 +342,12 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                         element.set_image(element.image_files[element.image_index])
                         if element.image_index == len(element.image_files) - 1:
                             button.visible = False
+
             elif ui_action == "ADD":
                 #print(f"pressed the {button.value_string}")
                 value = int(button.value_string)
                 if value <= bank:
-                    new_chip = UIImageElement(center_position=(460, 470),
-                                file=f"assets/chip_{button.value_string}.png",
-                                size=0.8,
-                                clickable=True,
-                                action="REMOVE",
-                                clickable_size=1.2)
-                    new_chip.value = value
+                    new_chip = make_betting_chip(value)
                     bank -= value
                     buttons.add(new_chip, layer=2)
                     betting_chips.append(new_chip)
@@ -353,6 +363,18 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                         refresh_bank_ui(buttons, bank)
                         break
                 break
+
+            elif ui_action == "ALL IN":
+                remaining = bank
+                for value in CHIP_VALUES:
+                    count, remaining = divmod(remaining, value)
+                    for _ in range(count):
+                        new_chip = make_betting_chip(value)
+                        buttons.add(new_chip, layer=2)
+                        betting_chips.append(new_chip)
+                bank = 0
+                refresh_bank_ui(buttons, bank)
+
             elif ui_action == "DEAL":
                 buttons.remove(betting_chips)
                 betting_chips.clear()
@@ -474,13 +496,17 @@ def new_game(screen, game_state):
                                     bg_rgb=GREEN, 
                                     text_rgb=WHITE, 
                                     text="ALL IN",
+                                    action="ALL IN",
                                     clickable=True)
+    all_in.value_string = str(player_amount)
+    all_in.is_all_in = True
 
     deal = UITextElement(center_position=(460, 330),
                                     font_size=60,
                                     bg_rgb=BG_GREEN, 
                                     text_rgb=WHITE, 
                                     text="DEAL",
+                                    action = "DEAL",
                                     clickable=True)
 
     starting_chip = UIImageElement(center_position=(460, 470),
