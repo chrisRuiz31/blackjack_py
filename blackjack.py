@@ -289,9 +289,19 @@ class UITextElement(Sprite):
         if self.visible:
             surface.blit(self.image, self.rect)
 
+# Helper function to make sure that the elements are refreshing per frame
+def refresh_bank_ui(buttons, bank):
+    """Updates the bank text and hides ADD chips worth more than the bank."""
+    for element in buttons:
+        if hasattr(element, "bank"):
+            element.update_amount(f"Bank:{bank}")
+        if hasattr(element, "value_string"):
+            element.visible = int(element.value_string) <= bank
+
 def game_loop(screen, buttons, game_state, betting_chips=None):
     running = True
     bank = 900
+    refresh_bank_ui(buttons, bank)
     while running:
         mouse_up = False
         for event in pygame.event.get():
@@ -331,9 +341,7 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                     bank -= value
                     buttons.add(new_chip, layer=2)
                     betting_chips.append(new_chip)
-                    for button in buttons:
-                        if hasattr(button, "bank"):
-                            button.update_amount(f"Bank:{bank}")
+                    refresh_bank_ui(buttons, bank)
               
             elif ui_action == "REMOVE":
                 mouse_pos = pygame.mouse.get_pos()
@@ -342,9 +350,7 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                         chip.kill()
                         betting_chips.remove(chip)
                         bank += chip.value
-                        for button in buttons:
-                            if hasattr(button, "bank"):
-                                button.update_amount(f"Bank:{bank}")
+                        refresh_bank_ui(buttons, bank)
                         break
                 break
             elif ui_action == "DEAL":
@@ -432,6 +438,7 @@ def new_game(screen, game_state):
     chip_values = ["01", "05", "25", "50", "100", "500"]
     game_chips = []
     chip_x_position = 60
+    # Adding chips
     for i in range(6):
         chip = UIImageElement(center_position=(chip_x_position, 425) if i < 3 else (chip_x_position, 525),
                             file=f"assets/chip_{chip_values[i]}.png",
