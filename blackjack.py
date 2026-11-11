@@ -291,7 +291,7 @@ class UITextElement(Sprite):
             surface.blit(self.image, self.rect)
 
 # Helper function to make sure that the elements are refreshing per frame
-def refresh_bank_ui(buttons, bank):
+def refresh_bank_ui(buttons, bank, betting_chips):
     """Updates the bank text and hides ADD chips worth more than the bank."""
     for element in buttons:
         if hasattr(element, "bank"):
@@ -300,6 +300,8 @@ def refresh_bank_ui(buttons, bank):
             element.visible = int(element.value_string) <= bank
         if hasattr(element, "is_all_in"):
             element.visible = bank > 0
+        if hasattr(element, "is_deal"):
+            element.visible = len(betting_chips) > 0
 
 # Changed into a helper function to create chips
 def make_betting_chip(value):
@@ -316,7 +318,7 @@ def make_betting_chip(value):
 def game_loop(screen, buttons, game_state, betting_chips=None):
     running = True
     bank = 900
-    refresh_bank_ui(buttons, bank)
+    refresh_bank_ui(buttons, bank, betting_chips)
     while running:
         mouse_up = False
         for event in pygame.event.get():
@@ -351,7 +353,7 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                     bank -= value
                     buttons.add(new_chip, layer=2)
                     betting_chips.append(new_chip)
-                    refresh_bank_ui(buttons, bank)
+                    refresh_bank_ui(buttons, bank, betting_chips)
               
             elif ui_action == "REMOVE":
                 mouse_pos = pygame.mouse.get_pos()
@@ -360,7 +362,7 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                         chip.kill()
                         betting_chips.remove(chip)
                         bank += chip.value
-                        refresh_bank_ui(buttons, bank)
+                        refresh_bank_ui(buttons, bank, betting_chips)
                         break
                 break
 
@@ -373,11 +375,13 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
                         buttons.add(new_chip, layer=2)
                         betting_chips.append(new_chip)
                 bank = 0
-                refresh_bank_ui(buttons, bank)
+                refresh_bank_ui(buttons, bank, betting_chips)
 
             elif ui_action == "DEAL":
                 buttons.remove(betting_chips)
                 betting_chips.clear()
+                refresh_bank_ui(buttons, bank, betting_chips)
+                
             elif ui_action is not None:
                 return ui_action
 
@@ -508,6 +512,7 @@ def new_game(screen, game_state):
                                     text="DEAL",
                                     action = "DEAL",
                                     clickable=True)
+    deal.is_deal = True
 
     starting_chip = UIImageElement(center_position=(460, 470),
                                     file=f"assets/chip_100.png",
