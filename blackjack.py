@@ -380,8 +380,10 @@ def game_loop(screen, buttons, game_state, betting_chips=None):
             elif ui_action == "DEAL":
                 buttons.remove(betting_chips)
                 betting_chips.clear()
-                refresh_bank_ui(buttons, bank, betting_chips)
-                
+                for element in buttons:
+                    if not hasattr(element, "keep_visible"):
+                        element.visible = False
+
             elif ui_action is not None:
                 return ui_action
 
@@ -451,6 +453,7 @@ def new_game(screen, game_state):
                               text_rgb=WHITE, 
                               text="GO BACK",
                               action = GameState.TITLE)
+    return_button.keep_visible = True
 
     player_amount = 900
     bank_text = UITextElement(center_position=(100, 50),
@@ -460,6 +463,7 @@ def new_game(screen, game_state):
                                 text=F"Bank:{player_amount}",
                                 clickable=False)
     bank_text.bank = 1
+    bank_text.keep_visible = True
     
     chip_values = ["01", "05", "25", "50", "100", "500"]
     game_chips = []
